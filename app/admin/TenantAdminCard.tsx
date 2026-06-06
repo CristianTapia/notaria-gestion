@@ -1,6 +1,10 @@
 "use client";
 
+import { Check, Eye, EyeOff, Pencil, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
+
+import { Button, Card, Input } from "@/components/ui";
+
 import { deleteTenant, updateTenant } from "./actions";
 import TenantOwnerForm from "./TenantOwnerForm";
 
@@ -24,61 +28,109 @@ function createSlugPreview(name: string) {
 }
 
 export default function TenantAdminCard({ tenant }: { tenant: TenantRow }) {
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(tenant.name);
+  const [active, setActive] = useState(tenant.active);
 
   const nextSlug = useMemo(() => createSlugPreview(name), [name]);
-  const slugWillChange = nextSlug !== tenant.slug;
+  const slugWillChange = editing && nextSlug !== tenant.slug;
+
+  const cancelEdit = () => {
+    setName(tenant.name);
+    setActive(tenant.active);
+    setEditing(false);
+  };
 
   return (
-    <div className="rounded-xl border p-4">
-      <form action={updateTenant} className="space-y-3">
+    <Card>
+      <form action={updateTenant} className="space-y-4">
         <input type="hidden" name="id" value={tenant.id} />
         <input type="hidden" name="currentSlug" value={tenant.slug} />
+        <input type="hidden" name="active" value={active ? "on" : ""} />
 
-        <input
-          name="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-md border px-3 py-2 font-semibold"
-        />
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            {editing ? (
+              <Input name="name" required value={name} onChange={(e) => setName(e.target.value)} className="max-w-md" />
+            ) : (
+              <>
+                <input type="hidden" name="name" value={tenant.name} />
+                <h2 className="text-base font-medium">{tenant.name}</h2>
+              </>
+            )}
 
-        <div className="text-sm text-gray-500">
-          <p>
-            Link actual: <span className="font-mono">/c/{tenant.slug}</span>
-          </p>
+            <div className="mt-1 space-y-1 text-xs text-[var(--color-muted)]">
+              <p className="font-mono">/c/{tenant.slug}</p>
 
-          <p>
-            Nuevo link: <span className="font-mono">/c/{nextSlug || tenant.slug}</span>
-          </p>
+              {slugWillChange && (
+                <p className="font-mono text-[var(--color-gold)]">Nuevo: /c/{nextSlug || tenant.slug}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              disabled={!editing}
+              onClick={() => setActive((prev) => !prev)}
+              className={`inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-medium transition ${
+                active ? "bg-[#F5E9D6] text-[var(--color-navy)]" : "bg-slate-100 text-slate-500"
+              } ${editing ? "hover:opacity-80" : "cursor-default"}`}
+            >
+              {active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              {active ? "Activa" : "Inactiva"}
+            </button>
+
+            <Button
+              type="button"
+              variant={editing ? "secondary" : "ghost"}
+              onClick={() => (editing ? cancelEdit() : setEditing(true))}
+              className="h-10 w-10 px-0"
+              aria-label={editing ? "Cancelar edición" : "Editar notaría"}
+            >
+              {editing ? <X className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
+            </Button>
+
+            <Button
+              form={`delete-tenant-${tenant.id}`}
+              variant="ghost"
+              className="h-10 w-10 px-0 hover:text-red-600"
+              aria-label="Eliminar notaría"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {slugWillChange && (
-          <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-900">
+          <div className="rounded-xl border border-[#EAC77E] bg-[#FFF8E8] p-3 text-sm text-[#7A4A00]">
             <p className="font-medium">Advertencia</p>
-            <p className="mt-1">
-              Cambiar el nombre modificará el link público. El QR anterior dejará de funcionar y la notaría deberá
-              imprimir un nuevo código QR.
-            </p>
+            <p className="mt-1">Cambiar el nombre modificará el link público. El QR anterior dejará de funcionar.</p>
+
             <label className="mt-3 flex items-start gap-2">
               <input type="checkbox" name="confirmSlugChange" className="mt-1" required />
-              <span>Entiendo que el link público cambiará y que será necesario generar/imprimir un nuevo QR.</span>
+              <span>Entiendo que será necesario generar/imprimir un nuevo QR.</span>
             </label>
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="active" defaultChecked={tenant.active} />
-          Activa
-        </label>
-
-        <button className="rounded-md border px-3 py-2 text-sm">Guardar</button>
+        {editing && (
+          <div className="flex flex-wrap gap-2">
+            <Button>
+              <Check className="h-4 w-4" />
+              Guardar cambios
+            </Button>
+          </div>
+        )}
       </form>
 
-      <form action={deleteTenant} className="mt-3">
+      <form id={`delete-tenant-${tenant.id}`} action={deleteTenant}>
         <input type="hidden" name="id" value={tenant.id} />
-        <button className="rounded-md border px-3 py-2 text-sm text-red-600">Eliminar</button>
       </form>
-      <TenantOwnerForm tenantId={tenant.id} />
-    </div>
+
+      <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+        <TenantOwnerForm tenantId={tenant.id} />
+      </div>
+    </Card>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
+import { Button, Card, Input } from "@/components/ui";
 import { createTenant } from "./actions";
 
 function createSlugPreview(name: string) {
@@ -20,27 +22,27 @@ export default function CreateTenantForm() {
   const slugPreview = createSlugPreview(name);
 
   return (
-    <form action={createTenant} className="mt-6 rounded-xl border p-4">
-      <h2 className="font-semibold">Crear notaría</h2>
+    <Card>
+      <form action={createTenant}>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <Input
+            name="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nombre de la notaría"
+          />
 
-      <div className="mt-4">
-        <label className="mb-1 block text-sm font-medium">Nombre</label>
+          <div className="flex h-11 items-center rounded-lg border border-[#DCD5C7] bg-[var(--color-cream-input)] px-3 font-mono text-sm text-[var(--color-muted)]">
+            /c/{slugPreview || "slug-url"}
+          </div>
+        </div>
 
-        <input
-          name="name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Notaría Viña del Mar"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
-
-      <p className="mt-2 text-sm text-gray-500">
-        URL pública: <span className="font-mono">/c/{slugPreview || "notaria-vina-del-mar"}</span>
-      </p>
-
-      <button className="mt-4 rounded-md bg-black px-4 py-2 text-white">Crear notaría</button>
-    </form>
+        <Button className="mt-4">
+          <Plus className="h-4 w-4" />
+          Crear notaría
+        </Button>
+      </form>
+    </Card>
   );
 }
