@@ -1,7 +1,9 @@
-import Link from "next/link";
+import { FileText, QrCode, Users, ClipboardList } from "lucide-react";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+
 import LogoutButton from "./LogoutButton";
+import AppShell from "@/components/layouts/AppShell";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type RoleRow = {
   role: string;
@@ -30,41 +32,45 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   if (!isTenantOwner && !isTenantMember) {
-    redirect("/dashboard");
+    redirect("/login");
   }
 
+  const navItems = [
+    {
+      href: "/dashboard/requests",
+      label: "Solicitudes",
+      icon: <ClipboardList className="h-4 w-4" />,
+    },
+    ...(isTenantOwner
+      ? [
+          {
+            href: "/dashboard/documents",
+            label: "Documentos",
+            icon: <FileText className="h-4 w-4" />,
+          },
+          {
+            href: "/dashboard/qr",
+            label: "QR",
+            icon: <QrCode className="h-4 w-4" />,
+          },
+          {
+            href: "/dashboard/users",
+            label: "Usuarios",
+            icon: <Users className="h-4 w-4" />,
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 border-r p-4">
-        <h1 className="text-xl font-bold">Notaría</h1>
-
-        <nav className="mt-8 space-y-2">
-          <Link className="block rounded-md px-3 py-2 hover:bg-gray-100" href="/dashboard/requests">
-            Solicitudes
-          </Link>
-
-          {isTenantOwner && (
-            <>
-              <Link className="block rounded-md px-3 py-2 hover:bg-gray-100" href="/dashboard/documents">
-                Documentos
-              </Link>
-
-              <Link className="block rounded-md px-3 py-2 hover:bg-gray-100" href="/dashboard/qr">
-                QR
-              </Link>
-
-              <Link className="block rounded-md px-3 py-2 hover:bg-gray-100" href="/dashboard/users">
-                Usuarios
-              </Link>
-            </>
-          )}
-        </nav>
-
-        <div className="mt-8 border-t pt-4 text-sm text-gray-500">{user.email}</div>
-        <LogoutButton />
-      </aside>
-
-      <section className="flex-1">{children}</section>
-    </div>
+    <AppShell
+      title="Notaría"
+      subtitle={isTenantOwner ? "Panel administrador" : "Panel funcionario"}
+      email={user.email}
+      navItems={navItems}
+      footer={<LogoutButton />}
+    >
+      {children}
+    </AppShell>
   );
 }

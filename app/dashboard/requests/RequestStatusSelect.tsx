@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+
+import { Input } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 
 const STATUS_OPTIONS = [
@@ -38,17 +40,16 @@ export default function RequestStatusSelect({
     if (error) {
       alert(error.message);
       setStatus(initialStatus);
-      return;
     }
   };
 
   return (
-    <div className="mt-3 flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <select
         value={status}
         onChange={(e) => updateStatus(e.target.value)}
         disabled={saving}
-        className="rounded-md border px-3 py-2 text-sm"
+        className="h-10 rounded-lg border border-[#DCD5C7] bg-[var(--color-cream-input)] px-3 text-sm outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/10 disabled:opacity-60"
       >
         {STATUS_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
@@ -57,7 +58,7 @@ export default function RequestStatusSelect({
         ))}
       </select>
 
-      {saving && <span className="text-xs text-gray-500">Guardando...</span>}
+      {saving && <span className="text-xs text-[var(--color-muted)]">Guardando...</span>}
     </div>
   );
 }

@@ -1,4 +1,7 @@
+import { Clock, Inbox } from "lucide-react";
 import { redirect } from "next/navigation";
+
+import { Badge, Card, PageHeader } from "@/components/ui";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import RequestStatusSelect from "./RequestStatusSelect";
 import RequestsRealtime from "./RequestsRealtime";
@@ -8,13 +11,11 @@ type RoleRow = {
   tenant_id: string | null;
 };
 
-type RequestDocument = {
-  title: string;
-};
+type RequestStatus = "pending" | "in_progress" | "ready" | "delivered" | "cancelled";
 
 type RequestRow = {
   id: string;
-  status: string;
+  status: RequestStatus;
   data: Record<string, unknown> | null;
   notes: string | null;
   created_at: string;
@@ -23,12 +24,27 @@ type RequestRow = {
   } | null;
 };
 
-function getDocumentTitle(documents: RequestRow["documents"]) {
-  if (Array.isArray(documents)) {
-    return documents[0]?.title ?? "Documento";
-  }
+const STATUS_LABEL: Record<RequestStatus, string> = {
+  pending: "Recibida",
+  in_progress: "En proceso",
+  ready: "Lista",
+  delivered: "Entregada",
+  cancelled: "Cancelada",
+};
 
-  return documents?.title ?? "Documento";
+const STATUS_BADGE_VARIANT: Record<RequestStatus, "gold" | "blue" | "green" | "neutral" | "red"> = {
+  pending: "gold",
+  in_progress: "blue",
+  ready: "green",
+  delivered: "neutral",
+  cancelled: "red",
+};
+
+function formatRequestDate(date: string) {
+  return new Date(date).toLocaleString("es-CL", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 export default async function DashboardRequestsPage() {
@@ -73,37 +89,81 @@ export default async function DashboardRequestsPage() {
 
   const typedRequests = (requests ?? []) as unknown as RequestRow[];
 
-  return (
-    <main className="min-h-screen p-8">
-      <h1 className="text-2xl font-bold">Solicitudes</h1>
+  const pendingCount = typedRequests.filter(
+    (request) => request.status === "pending" || request.status === "in_progress",
+  ).length;
 
+  return (
+    <div>
       <RequestsRealtime tenantId={tenantRole.tenant_id} />
 
-      <div className="mt-6 space-y-4">
-        {typedRequests.length === 0 ? (
-          <p className="text-gray-500">No hay solicitudes todavía.</p>
-        ) : (
-          typedRequests.map((request) => (
-            <div key={request.id} className="rounded-xl border p-4">
-              <p className="font-semibold">{request.documents?.title ?? "Documento"}</p>
+      <PageHeader
+        eyebrow="Panel de atención"
+        title="Solicitudes"
+        description="Revisa y actualiza el estado de los documentos solicitados por clientes."
+      >
+        <div className="hidden rounded-2xl border border-[var(--color-border)] bg-white/80 px-5 py-3 text-right shadow-sm sm:block">
+          <p className="text-2xl font-medium">{typedRequests.length}</p>
+          <p className="text-xs text-[var(--color-muted)]">{pendingCount} activas</p>
+        </div>
+      </PageHeader>
 
-              <p className="text-sm text-gray-500">Estado: {request.status}</p>
+      {typedRequests.length === 0 ? (
+        <Card className="flex min-h-48 flex-col items-center justify-center text-center">
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-[var(--color-gold)]/10 text-[var(--color-gold)]">
+            <Inbox className="h-5 w-5" />
+          </div>
 
-              <RequestStatusSelect
-                key={`${request.id}-${request.status}`}
-                requestId={request.id}
-                initialStatus={request.status}
-              />
+          <p className="mt-4 font-medium">No hay solicitudes todavía</p>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">
+            Cuando un cliente envíe una solicitud aparecerá aquí.
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {typedRequests.map((request) => (
+            <Card key={request.id}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="break-words text-base font-medium">{request.documents?.title ?? "Documento"}</h2>
 
-              <p className="text-xs text-gray-400">{new Date(request.created_at).toLocaleString("es-ES")}</p>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{formatRequestDate(request.created_at)}</span>
+                  </div>
+                </div>
+
+                <Badge variant={STATUS_BADGE_VARIANT[request.status] ?? "neutral"}>
+                  {STATUS_LABEL[request.status] ?? request.status}
+                </Badge>
+              </div>
+
+              <div className="mt-4">
+                <RequestStatusSelect
+                  key={`${request.id}-${request.status}`}
+                  requestId={request.id}
+                  initialStatus={request.status}
+                />
+              </div>
 
               {request.data && (
-                <pre className="mt-3 overflow-auto rounded p-3 text-xs">{JSON.stringify(request.data, null, 2)}</pre>
+                <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-cream-input)] p-4">
+                  <p className="mb-3 text-xs font-medium text-[var(--color-muted)]">Datos enviados</p>
+
+                  <dl className="grid gap-3">
+                    {Object.entries(request.data).map(([key, value]) => (
+                      <div key={key} className="min-w-0">
+                        <dt className="text-xs text-[var(--color-muted)]">{key}</dt>
+                        <dd className="break-words text-sm">{String(value || "—")}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
               )}
-            </div>
-          ))
-        )}
-      </div>
-    </main>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

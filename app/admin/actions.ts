@@ -14,17 +14,26 @@ function createSlug(name: string) {
     .replace(/-+/g, "-");
 }
 
-export async function createTenant(formData: FormData) {
+export async function createTenant(
+  _prevState: { ok: boolean; message: string; createdName?: string },
+  formData: FormData,
+) {
   const name = String(formData.get("name") ?? "").trim();
 
   if (!name) {
-    throw new Error("Nombre requerido");
+    return {
+      ok: false,
+      message: "Nombre requerido",
+    };
   }
 
   const baseSlug = createSlug(name);
 
   if (!baseSlug) {
-    throw new Error("No se pudo generar un slug válido");
+    return {
+      ok: false,
+      message: "No se pudo generar un slug válido",
+    };
   }
 
   let slug = baseSlug;
@@ -46,10 +55,19 @@ export async function createTenant(formData: FormData) {
   });
 
   if (error) {
-    throw new Error(error.message);
+    return {
+      ok: false,
+      message: error.message,
+    };
   }
 
   revalidatePath("/admin");
+
+  return {
+    ok: true,
+    message: "Notaría creada correctamente",
+    createdName: name,
+  };
 }
 
 export async function updateTenant(formData: FormData) {

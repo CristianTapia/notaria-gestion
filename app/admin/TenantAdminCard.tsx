@@ -69,36 +69,28 @@ export default function TenantAdminCard({ tenant }: { tenant: TenantRow }) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              disabled={!editing}
-              onClick={() => setActive((prev) => !prev)}
-              className={`inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-medium transition ${
-                active ? "bg-[#F5E9D6] text-[var(--color-navy)]" : "bg-slate-100 text-slate-500"
-              } ${editing ? "hover:opacity-80" : "cursor-default"}`}
-            >
-              {active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              {active ? "Activa" : "Inactiva"}
-            </button>
+            {!editing && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setEditing(true)}
+                  className="h-12 w-12 px-0"
+                  aria-label="Editar notaría"
+                >
+                  <Pencil size={24} strokeWidth={1.8} />
+                </Button>
 
-            <Button
-              type="button"
-              variant={editing ? "secondary" : "ghost"}
-              onClick={() => (editing ? cancelEdit() : setEditing(true))}
-              className="h-10 w-10 px-0"
-              aria-label={editing ? "Cancelar edición" : "Editar notaría"}
-            >
-              {editing ? <X className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
-            </Button>
-
-            <Button
-              form={`delete-tenant-${tenant.id}`}
-              variant="ghost"
-              className="h-10 w-10 px-0 hover:text-red-600"
-              aria-label="Eliminar notaría"
-            >
-              <Trash2 className="h-5 w-5" />
-            </Button>
+                <Button
+                  form={`delete-tenant-${tenant.id}`}
+                  variant="ghost"
+                  className="h-12 w-12 px-0 hover:text-red-600"
+                  aria-label="Eliminar notaría"
+                >
+                  <Trash2 size={24} strokeWidth={1.8} />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -119,6 +111,11 @@ export default function TenantAdminCard({ tenant }: { tenant: TenantRow }) {
             <Button>
               <Check className="h-4 w-4" />
               Guardar cambios
+            </Button>
+
+            <Button type="button" variant="secondary" onClick={cancelEdit}>
+              <X className="h-4 w-4" />
+              Cancelar
             </Button>
           </div>
         )}
