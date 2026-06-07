@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+
+import { Switch } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 
 export default function DocumentActiveToggle({
@@ -14,6 +16,7 @@ export default function DocumentActiveToggle({
   const [saving, setSaving] = useState(false);
 
   const toggle = async () => {
+    const previousActive = active;
     const nextActive = !active;
 
     setActive(nextActive);
@@ -25,13 +28,16 @@ export default function DocumentActiveToggle({
 
     if (error) {
       alert(error.message);
-      setActive(active);
+      setActive(previousActive);
     }
   };
 
   return (
-    <button type="button" onClick={toggle} disabled={saving} className="mt-3 rounded-md border px-3 py-1.5 text-sm">
-      {saving ? "Guardando..." : active ? "Visible" : "Oculto"}
-    </button>
+    <Switch
+      checked={active}
+      disabled={saving}
+      onClick={toggle}
+      label={saving ? "Guardando..." : active ? "Visible" : "Oculto"}
+    />
   );
 }

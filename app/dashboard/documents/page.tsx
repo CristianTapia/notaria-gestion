@@ -1,10 +1,10 @@
+import { Inbox } from "lucide-react";
 import { redirect } from "next/navigation";
+
+import { Card, PageHeader } from "@/components/ui";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import CreateDocumentForm from "./CreateDocumentsForm";
-import DocumentActiveToggle from "./DocumentActiveToggle";
-import EditDocumentForm from "./EditDocumentForm";
-import CreateFieldForm from "./CreateFieldForm";
-import EditFieldForm from "./EditFieldForm";
+import DocumentCard from "./DocumentCard";
 
 type RoleRow = {
   role: string;
@@ -53,21 +53,21 @@ export default async function DashboardDocumentsPage() {
     .from("documents")
     .select(
       `
-    id,
-    title,
-    description,
-    active,
-    created_at,
-    document_fields (
       id,
-      label,
-      field_type,
-      required,
-      placeholder,
-      options,
-      sort_order
-    )
-  `,
+      title,
+      description,
+      active,
+      created_at,
+      document_fields (
+        id,
+        label,
+        field_type,
+        required,
+        placeholder,
+        options,
+        sort_order
+      )
+    `,
     )
     .eq("tenant_id", tenantRole.tenant_id)
     .order("created_at", { ascending: false });
@@ -75,47 +75,39 @@ export default async function DashboardDocumentsPage() {
   if (error) throw new Error(error.message);
 
   const typedDocuments = (documents ?? []) as DocumentRow[];
+  const activeCount = typedDocuments.filter((doc) => doc.active).length;
 
   return (
-    <main className="min-h-screen p-8">
-      <h1 className="text-2xl font-bold">Documentos</h1>
+    <div>
+      <PageHeader
+        eyebrow="Configuración"
+        title="Documentos"
+        description="Crea los documentos disponibles para clientes y define los campos que deben completar."
+      >
+        <div className="hidden rounded-2xl border border-[var(--color-border)] bg-white/80 px-5 py-3 text-right shadow-sm sm:block">
+          <p className="text-2xl font-medium">{typedDocuments.length}</p>
+          <p className="text-xs text-[var(--color-muted)]">{activeCount} visibles</p>
+        </div>
+      </PageHeader>
 
       <CreateDocumentForm tenantId={tenantRole.tenant_id} />
 
       <div className="mt-6 space-y-4">
         {typedDocuments.length === 0 ? (
-          <p className="text-gray-500">No hay documentos todavía.</p>
-        ) : (
-          typedDocuments.map((doc) => (
-            <div key={doc.id} className="rounded-xl border p-4">
-              <h2 className="font-semibold">{doc.title}</h2>
-
-              <DocumentActiveToggle documentId={doc.id} initialActive={doc.active} />
-              <EditDocumentForm documentId={doc.id} initialTitle={doc.title} initialDescription={doc.description} />
-
-              {doc.description && <p className="text-sm text-gray-500">{doc.description}</p>}
-
-              <div className="mt-4 rounded-lg border p-3">
-                <h3 className="font-medium">Campos</h3>
-
-                {doc.document_fields.length === 0 ? (
-                  <p className="mt-2 text-sm text-gray-500">Este documento aún no tiene campos.</p>
-                ) : (
-                  <ul className="mt-2 space-y-2">
-                    {doc.document_fields.map((field) => (
-                      <EditFieldForm key={field.id} field={field} />
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <CreateFieldForm documentId={doc.id} nextSortOrder={(doc.document_fields?.length ?? 0) + 1} />
-
-              <p className="mt-2 text-xs text-gray-400">Estado: {doc.active ? "Visible" : "Oculto"}</p>
+          <Card className="flex min-h-48 flex-col items-center justify-center text-center">
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-[var(--color-gold)]/10 text-[var(--color-gold)]">
+              <Inbox className="h-5 w-5" />
             </div>
-          ))
+
+            <p className="mt-4 font-medium">No hay documentos todavía</p>
+            <p className="mt-1 text-sm text-[var(--color-muted)]">
+              Crea el primer documento para comenzar a recibir solicitudes.
+            </p>
+          </Card>
+        ) : (
+          typedDocuments.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
         )}
       </div>
-    </main>
+    </div>
   );
 }

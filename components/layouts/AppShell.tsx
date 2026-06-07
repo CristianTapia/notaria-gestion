@@ -103,8 +103,8 @@ export default function AppShell({
         </aside>
       </div>
 
-      <div className="flex">
-        <aside className="hidden min-h-screen w-72 flex-col bg-[var(--color-navy)] text-white md:flex">
+      <div className="flex h-[calc(100vh-4rem)] md:h-screen">
+        <aside className="hidden h-screen w-72 shrink-0 flex-col bg-[var(--color-navy)] text-white md:flex">
           <div className="border-b border-white/10 p-6">
             <h1 className="text-lg font-medium">{title}</h1>
             {subtitle && <p className="text-xs text-white/60">{subtitle}</p>}
@@ -135,7 +135,7 @@ export default function AppShell({
           )}
         </aside>
 
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 md:p-8">{children}</div>
         </main>
       </div>

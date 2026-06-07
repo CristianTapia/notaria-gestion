@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { Button, Input } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 
 const FIELD_TYPES = [
@@ -23,11 +26,16 @@ export default function CreateFieldForm({ documentId, nextSortOrder }: { documen
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const cleanLabel = label.trim();
+
+    if (!cleanLabel) return;
+
     setSaving(true);
 
     const { error } = await supabase.from("document_fields").insert({
       document_id: documentId,
-      label,
+      label: cleanLabel,
       field_type: fieldType,
       required,
       sort_order: nextSortOrder,
@@ -49,37 +57,51 @@ export default function CreateFieldForm({ documentId, nextSortOrder }: { documen
   };
 
   return (
-    <form onSubmit={submit} className="mt-3 rounded-lg border p-3 space-y-3">
-      <input
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        required
-        placeholder="Texto de la pregunta"
-        className="w-full rounded-md border px-3 py-2 text-sm"
-      />
+    <form onSubmit={submit} className="rounded-xl border border-[var(--color-border)] bg-white/70 p-4">
+      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">Agregar campo</p>
 
-      <div className="flex gap-2">
-        <select
-          value={fieldType}
-          onChange={(e) => setFieldType(e.target.value)}
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
-        >
-          {FIELD_TYPES.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-3">
+        <Input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          required
+          disabled={saving}
+          placeholder="Texto de la pregunta"
+        />
 
-        <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-          <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
-          Obligatoria
-        </label>
+        <div className="flex gap-2">
+          <select
+            value={fieldType}
+            onChange={(e) => setFieldType(e.target.value)}
+            disabled={saving}
+            className="h-11 flex-1 rounded-lg border border-[#DCD5C7] bg-[var(--color-cream-input)] px-3 text-sm outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/10 disabled:opacity-60"
+          >
+            {FIELD_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setRequired((prev) => !prev)}
+            disabled={saving}
+            className={`h-11 rounded-lg border px-3 text-sm font-medium transition ${
+              required
+                ? "border-[var(--color-gold)] bg-[#F5E9D6] text-[var(--color-navy)]"
+                : "border-[var(--color-border)] bg-white text-[var(--color-muted)] hover:bg-[var(--color-cream-input)]"
+            }`}
+          >
+            Obligatoria
+          </button>
+        </div>
+
+        <Button type="submit" disabled={saving}>
+          <Plus className="h-4 w-4" />
+          {saving ? "Agregando..." : "Agregar pregunta"}
+        </Button>
       </div>
-
-      <button disabled={saving} className="rounded-md bg-black px-3 py-2 text-sm text-white">
-        {saving ? "Agregando..." : "Agregar pregunta"}
-      </button>
     </form>
   );
 }

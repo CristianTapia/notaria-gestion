@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { Badge, Button, Input } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 
 const FIELD_TYPES = [
@@ -23,9 +26,14 @@ type Field = {
   options: string[] | null;
 };
 
+function getFieldTypeLabel(value: string) {
+  return FIELD_TYPES.find((type) => type.value === value)?.label ?? value;
+}
+
 export default function EditFieldForm({ field }: { field: Field }) {
   const router = useRouter();
 
+  const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(field.label);
   const [fieldType, setFieldType] = useState(field.field_type);
   const [required, setRequired] = useState(field.required);
@@ -33,7 +41,23 @@ export default function EditFieldForm({ field }: { field: Field }) {
   const [optionsText, setOptionsText] = useState((field.options ?? []).join(", "));
   const [saving, setSaving] = useState(false);
 
+  const cancelEdit = () => {
+    setLabel(field.label);
+    setFieldType(field.field_type);
+    setRequired(field.required);
+    setPlaceholder(field.placeholder ?? "");
+    setOptionsText((field.options ?? []).join(", "));
+    setEditing(false);
+  };
+
   const save = async () => {
+    const cleanLabel = label.trim();
+
+    if (!cleanLabel) {
+      alert("La pregunta es requerida");
+      return;
+    }
+
     setSaving(true);
 
     const options =
@@ -47,7 +71,7 @@ export default function EditFieldForm({ field }: { field: Field }) {
     const { error } = await supabase
       .from("document_fields")
       .update({
-        label,
+        label: cleanLabel,
         field_type: fieldType,
         required,
         placeholder: placeholder.trim() || null,
@@ -62,6 +86,7 @@ export default function EditFieldForm({ field }: { field: Field }) {
       return;
     }
 
+    setEditing(false);
     router.refresh();
   };
 
@@ -83,68 +108,112 @@ export default function EditFieldForm({ field }: { field: Field }) {
     router.refresh();
   };
 
+  if (!editing) {
+    return (
+      <li className="rounded-xl border border-[var(--color-border)] bg-white p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="break-words text-sm font-medium">{field.label}</p>
+
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge variant="neutral">{getFieldTypeLabel(field.field_type)}</Badge>
+              {field.required && <Badge variant="gold">Obligatoria</Badge>}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setEditing(true)}
+              className="h-10 w-10 px-0"
+              aria-label="Editar campo"
+            >
+              <Pencil size={22} strokeWidth={1.8} />
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={remove}
+              disabled={saving}
+              className="h-10 w-10 px-0 hover:text-red-600"
+              aria-label="Eliminar campo"
+            >
+              <Trash2 size={22} strokeWidth={1.8} />
+            </Button>
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   return (
-    <div className="rounded-lg border p-3 space-y-3">
-      <input
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        className="w-full rounded-md border px-3 py-2 text-sm"
-      />
-
-      <div className="flex gap-2">
-        <select
-          value={fieldType}
-          onChange={(e) => setFieldType(e.target.value)}
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
-        >
-          {FIELD_TYPES.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
-
-        <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-          <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
-          Obligatoria
-        </label>
-      </div>
-
-      <input
-        value={placeholder}
-        onChange={(e) => setPlaceholder(e.target.value)}
-        placeholder="Texto de ayuda / placeholder"
-        className="w-full rounded-md border px-3 py-2 text-sm"
-      />
-
-      {fieldType === "select" && (
-        <input
-          value={optionsText}
-          onChange={(e) => setOptionsText(e.target.value)}
-          placeholder="Opciones separadas por coma. Ej: Sí, No, No aplica"
-          className="w-full rounded-md border px-3 py-2 text-sm"
+    <li className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className="space-y-3">
+        <Input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          disabled={saving}
+          placeholder="Texto de la pregunta"
         />
-      )}
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="rounded-md bg-black px-3 py-2 text-sm text-white"
-        >
-          {saving ? "Guardando..." : "Guardar pregunta"}
-        </button>
+        <div className="flex gap-2">
+          <select
+            value={fieldType}
+            onChange={(e) => setFieldType(e.target.value)}
+            disabled={saving}
+            className="h-11 flex-1 rounded-lg border border-[#DCD5C7] bg-[var(--color-cream-input)] px-3 text-sm outline-none transition focus:border-[var(--color-navy)] focus:ring-4 focus:ring-[var(--color-navy)]/10 disabled:opacity-60"
+          >
+            {FIELD_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
 
-        <button
-          type="button"
-          onClick={remove}
+          <button
+            type="button"
+            onClick={() => setRequired((prev) => !prev)}
+            disabled={saving}
+            className={`h-11 rounded-lg border px-3 text-sm font-medium transition ${
+              required
+                ? "border-[var(--color-gold)] bg-[#F5E9D6] text-[var(--color-navy)]"
+                : "border-[var(--color-border)] bg-[var(--color-cream-input)] text-[var(--color-muted)] hover:bg-white"
+            }`}
+          >
+            Obligatoria
+          </button>
+        </div>
+
+        <Input
+          value={placeholder}
+          onChange={(e) => setPlaceholder(e.target.value)}
           disabled={saving}
-          className="rounded-md border px-3 py-2 text-sm text-red-600"
-        >
-          Eliminar
-        </button>
+          placeholder="Texto de ayuda / placeholder"
+        />
+
+        {fieldType === "select" && (
+          <Input
+            value={optionsText}
+            onChange={(e) => setOptionsText(e.target.value)}
+            disabled={saving}
+            placeholder="Opciones separadas por coma. Ej: Sí, No, No aplica"
+          />
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={save} disabled={saving}>
+            <Check className="h-4 w-4" />
+            {saving ? "Guardando..." : "Guardar pregunta"}
+          </Button>
+
+          <Button type="button" variant="secondary" onClick={cancelEdit} disabled={saving}>
+            <X className="h-4 w-4" />
+            Cancelar
+          </Button>
+        </div>
       </div>
-    </div>
+    </li>
   );
 }
