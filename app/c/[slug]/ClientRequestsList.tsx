@@ -1,6 +1,9 @@
 "use client";
 
+import { Clock, FileText, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
+import { Badge } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import {
   getStoredClientRequests,
@@ -13,10 +16,31 @@ import {
 const STATUS_LABEL: Record<ClientRequestStatus, string> = {
   pending: "Recibida",
   in_progress: "En proceso",
-  ready: "Listo",
-  delivered: "Entregado",
-  cancelled: "Cancelado",
+  ready: "Lista",
+  delivered: "Entregada",
+  cancelled: "Cancelada",
 };
+
+const STATUS_VARIANT: Record<ClientRequestStatus, "gold" | "blue" | "green" | "neutral" | "red"> = {
+  pending: "gold",
+  in_progress: "blue",
+  ready: "green",
+  delivered: "neutral",
+  cancelled: "red",
+};
+
+function formatDate(date: string) {
+  const parsedDate = new Date(date);
+
+  const day = String(parsedDate.getDate()).padStart(2, "0");
+  const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+  const year = parsedDate.getFullYear();
+
+  const hours = String(parsedDate.getHours()).padStart(2, "0");
+  const minutes = String(parsedDate.getMinutes()).padStart(2, "0");
+
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+}
 
 export default function ClientRequestsList({ tenantId }: { tenantId: string }) {
   const [clientRequests, setClientRequests] = useState<StoredClientRequest[]>([]);
@@ -107,26 +131,41 @@ export default function ClientRequestsList({ tenantId }: { tenantId: string }) {
   if (clientRequests.length === 0) return null;
 
   return (
-    <section className="mb-10">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Mis solicitudes</h2>
-        <span className="text-xs text-gray-500">Actualización automática</span>
+    <section className="rounded-3xl border border-[var(--color-border)] bg-white/70 p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-medium">Mis solicitudes</h2>
+          <p className="mt-1 text-xs text-[var(--color-muted)]">Seguimiento desde este teléfono</p>
+        </div>
+
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs text-[var(--color-muted)]">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Auto
+        </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {clientRequests.map((request) => (
-          <div key={request.requestId} className="flex items-center justify-between gap-3 rounded-xl border p-4">
-            <div>
-              <h3 className="font-medium">{request.documentTitle}</h3>
-              <p className="text-xs text-gray-500">
-                {new Date(request.createdAt).toLocaleString("es-ES", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
-              </p>
+          <div
+            key={request.requestId}
+            className="flex items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-white/85 p-4 shadow-sm"
+          >
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-100 text-[var(--color-navy)]">
+              <FileText className="h-5 w-5" />
             </div>
 
-            <span className="rounded-full border px-3 py-1 text-xs">{STATUS_LABEL[request.status]}</span>
+            <div className="min-w-0 flex-1">
+              <h3 className="break-words text-sm font-medium">{request.documentTitle}</h3>
+
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
+                <Clock className="h-3.5 w-3.5" />
+                <span>{formatDate(request.createdAt)}</span>
+              </div>
+            </div>
+
+            <Badge variant={STATUS_VARIANT[request.status]} className="shrink-0">
+              {STATUS_LABEL[request.status]}
+            </Badge>
           </div>
         ))}
       </div>

@@ -1,11 +1,57 @@
 "use client";
 
-import { CheckCircle2, Info } from "lucide-react";
 import { useEffect, useState } from "react";
-
 import { Button, Card } from "@/components/ui";
 import { saveClientRequest } from "@/lib/client-requests-storage";
 import { supabase } from "@/lib/supabase";
+import { BadgeCheck, CheckCircle2, CircleX, Clock, Info, LoaderCircle } from "lucide-react";
+
+const STATUS_STEP: Record<string, number> = {
+  pending: 0,
+  in_progress: 1,
+  ready: 2,
+  delivered: 3,
+  cancelled: -1,
+};
+
+const STATUS_MESSAGE: Record<string, string> = {
+  pending: "Su solicitud fue recibida. Pronto la atenderemos.",
+  in_progress: "Estamos revisando su solicitud.",
+  ready: "Su documento está listo.",
+  delivered: "Su documento fue entregado.",
+  cancelled: "Su solicitud fue cancelada.",
+};
+
+const STEPS = [
+  { key: "pending", label: "Recibida" },
+  { key: "in_progress", label: "En proceso" },
+  { key: "ready", label: "Lista" },
+  { key: "delivered", label: "Entregada" },
+];
+
+function renderStatusIcon(status: string) {
+  if (status === "in_progress") {
+    return <LoaderCircle className="h-7 w-7 animate-spin" />;
+  }
+
+  if (status === "ready") {
+    return <BadgeCheck className="h-7 w-7" />;
+  }
+
+  if (status === "delivered") {
+    return <CheckCircle2 className="h-7 w-7" />;
+  }
+
+  if (status === "cancelled") {
+    return <CircleX className="h-7 w-7" />;
+  }
+
+  return <Clock className="h-7 w-7" />;
+}
+
+function isActiveStatus(status: string) {
+  return status === "pending" || status === "in_progress" || status === "ready";
+}
 
 type Field = {
   id: string;
@@ -127,19 +173,110 @@ export default function ClientDocumentForm({ doc, fields, slug }: { doc: Doc; fi
   };
 
   if (requestId) {
+    const currentStep = STATUS_STEP[status] ?? 0;
+    const shouldAnimate = isActiveStatus(status);
+
     return (
       <Card className="mt-8 text-center">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-green-100 text-green-700">
-          <CheckCircle2 className="h-6 w-6" />
+        <div
+          className={`mx-auto grid h-16 w-16 place-items-center rounded-full bg-[var(--color-gold)]/20 text-[var(--color-navy)] ${
+            shouldAnimate ? "animate-pulse" : ""
+          }`}
+        >
+          {renderStatusIcon(status)}
         </div>
 
-        <p className="mt-4 text-sm text-[var(--color-muted)]">Solicitud enviada</p>
+        <p className="mt-6 text-xs font-medium uppercase tracking-[0.25em] text-[var(--color-muted)]">Estado actual</p>
 
         <h2 className="mt-2 text-3xl font-normal tracking-[-0.03em]">{STATUS_LABEL[status] ?? status}</h2>
 
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[var(--color-muted)]">
-          Puede mantener esta pantalla abierta para ver el estado actualizado automáticamente.
+          {STATUS_MESSAGE[status] ?? "Su solicitud fue enviada correctamente."}
         </p>
+
+        <p className="mt-5 text-sm font-medium">{doc.title}</p>
+
+        {status !== "cancelled" && (
+          <div className="mx-auto mt-8 max-w-xs text-left">
+            {STEPS.map((step, index) => {
+              const completed = index < currentStep;
+              const current = index === currentStep;
+              const active = completed || current;
+
+              return (
+                <div key={step.key} className="relative flex gap-3 pb-6 last:pb-0">
+                  {index < STEPS.length - 1 && (
+                    <div
+                      className={`absolute left-[13px] top-7 h-full w-[2px] ${
+                        index < currentStep ? "bg-[var(--color-gold)]" : "bg-slate-300"
+                      }`}
+                    />
+                  )}
+
+                  <div className="relative z-10 h-7 w-7">
+                    {current && shouldAnimate && (
+                      <span className="absolute inset-0 rounded-full bg-[var(--color-gold)] opacity-20 scale-[1.6] animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                    )}
+
+                    <div
+                      className={`relative z-10 grid h-7 w-7 place-items-center rounded-full border-2 ${
+                        active
+                          ? "border-[var(--color-gold)] bg-[var(--color-gold)] text-white"
+                          : "border-slate-300 bg-white text-slate-300"
+                      }`}
+                    >
+                      {completed ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        <span className="h-2 w-2 rounded-full bg-current" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-0.5">
+                    <p
+                      className={`text-sm ${
+                        active ? "font-medium text-[var(--color-navy)]" : "text-[var(--color-muted)]"
+                      }`}
+                    >
+                      {step.label}
+                    </p>
+
+                    {current && shouldAnimate && (
+                      <p className="mt-1 text-xs text-[var(--color-muted)]">Estado actualizado automáticamente</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-8 rounded-xl border border-[#EAC77E] bg-[#FFF8E8] px-4 py-4 text-left text-sm text-[#7A4A00]">
+          <div className="flex gap-2">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+
+            <div>
+              <p className="font-medium">Seguimiento guardado</p>
+              <p className="mt-1 leading-6">
+                Puede solicitar otro documento y volver al listado sin perder este seguimiento. Si mantiene esta
+                pantalla abierta, actualizaremos el estado automáticamente.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex items-center justify-center gap-2 text-xs text-[var(--color-muted)]">
+          <span className="h-2 w-2 rounded-full bg-[var(--color-navy)]" />
+          Actualizando estado automáticamente
+        </div>
+
+        <a
+          href={`/c/${slug}`}
+          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-lg bg-[var(--color-cream-input)] text-sm font-medium text-[var(--color-navy)] transition hover:bg-[#EDE8DD]"
+        >
+          Solicitar otro documento
+        </a>
       </Card>
     );
   }
