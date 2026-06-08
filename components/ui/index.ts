@@ -6,3 +6,4 @@ export { Textarea } from "./Textarea";
 export { Badge } from "./Badge";
 export { PageHeader } from "./PageHeader";
 export { Switch } from "./Switch";
+export { Modal } from "./Modal";

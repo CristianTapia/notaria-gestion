@@ -60,6 +60,7 @@ function getServerSoundPreferenceSnapshot() {
 
 export default function RequestsClient({ tenantId, requests }: { tenantId: string; requests: RequestRow[] }) {
   const [filter, setFilter] = useState("active");
+  const [highlightedRequestIds, setHighlightedRequestIds] = useState<string[]>([]);
   const soundEnabled = useSyncExternalStore(
     subscribeToSoundPreference,
     getSoundPreferenceSnapshot,
@@ -105,7 +106,17 @@ export default function RequestsClient({ tenantId, requests }: { tenantId: strin
 
   return (
     <div className="min-w-0">
-      <RequestsRealtime tenantId={tenantId} soundEnabled={soundEnabled} />
+      <RequestsRealtime
+        tenantId={tenantId}
+        soundEnabled={soundEnabled}
+        onNewRequest={(requestId) => {
+          setHighlightedRequestIds((prev) => [...new Set([requestId, ...prev])]);
+
+          window.setTimeout(() => {
+            setHighlightedRequestIds((prev) => prev.filter((id) => id !== requestId));
+          }, 12000);
+        }}
+      />
 
       <PageHeader
         eyebrow="Panel de atención"
@@ -147,7 +158,9 @@ export default function RequestsClient({ tenantId, requests }: { tenantId: strin
         {filteredRequests.length === 0 ? (
           <p className="text-sm text-[var(--color-muted)]">No hay solicitudes para este filtro.</p>
         ) : (
-          filteredRequests.map((request) => <RequestCard key={request.id} request={request} />)
+          filteredRequests.map((request) => (
+            <RequestCard key={request.id} request={request} isNew={highlightedRequestIds.includes(request.id)} />
+          ))
         )}
       </div>
     </div>

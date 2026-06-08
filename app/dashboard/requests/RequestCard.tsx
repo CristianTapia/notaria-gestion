@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { CalendarDays, Clock } from "lucide-react";
 
 import { Badge, Card } from "@/components/ui";
 import RequestStatusSelect from "./RequestStatusSelect";
@@ -32,7 +32,7 @@ const STATUS_BADGE_VARIANT: Record<RequestStatus, "gold" | "blue" | "green" | "n
   cancelled: "red",
 };
 
-function formatRequestDate(date: string) {
+function formatRequestDateParts(date: string) {
   const parsedDate = new Date(date);
 
   const day = String(parsedDate.getDate()).padStart(2, "0");
@@ -42,19 +42,50 @@ function formatRequestDate(date: string) {
   const hours = String(parsedDate.getHours()).padStart(2, "0");
   const minutes = String(parsedDate.getMinutes()).padStart(2, "0");
 
-  return `${day}-${month}-${year} ${hours}:${minutes}`;
+  return {
+    date: `${day}-${month}-${year}`,
+    time: `${hours}:${minutes}`,
+  };
 }
 
-export default function RequestCard({ request }: { request: RequestRow }) {
+export default function RequestCard({ request, isNew = false }: { request: RequestRow; isNew?: boolean }) {
+  const dateParts = formatRequestDateParts(request.created_at);
+
   return (
-    <Card>
+    <Card
+      className={`relative overflow-hidden transition ${
+        isNew ? "border-red-300 bg-red-50/60 shadow-[0_0_0_4px_rgba(239,68,68,0.10)]" : ""
+      }`}
+    >
+      {isNew && (
+        <div className="pointer-events-none absolute right-4 top-4">
+          <span className="absolute inset-0 h-3 w-3 rounded-full bg-red-500 opacity-30 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+          <span className="relative block h-3 w-3 rounded-full bg-red-500" />
+        </div>
+      )}
+
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <h2 className="break-words text-base font-medium">{request.documents?.title ?? "Documento"}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="break-words text-base font-medium">{request.documents?.title ?? "Documento"}</h2>
 
-          <div className="mt-2 flex min-w-0 items-center gap-2 text-xs text-[var(--color-muted)]">
-            <Clock className="h-3.5 w-3.5" />
-            <span className="min-w-0 break-words">{formatRequestDate(request.created_at)}</span>
+            {isNew && (
+              <Badge variant="red" className="shrink-0">
+                Nueva
+              </Badge>
+            )}
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--color-muted)]">
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {dateParts.date}
+            </span>
+
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" />
+              {dateParts.time}
+            </span>
           </div>
         </div>
 
@@ -72,13 +103,20 @@ export default function RequestCard({ request }: { request: RequestRow }) {
       </div>
 
       {request.data && (
-        <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
-          {Object.entries(request.data).map(([key, value]) => (
-            <div key={key} className="min-w-0">
-              <p className="break-words text-xs uppercase tracking-wide text-[var(--color-muted)]">{key}</p>
-              <p className="mt-1 break-words text-sm">{String(value || "—")}</p>
-            </div>
-          ))}
+        <div className="mt-4 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/70">
+          <div className="grid grid-cols-[0.9fr_1.1fr] border-b border-[var(--color-border)] bg-[var(--color-cream-input)] px-4 py-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
+            <span>Campo</span>
+            <span>Valor</span>
+          </div>
+
+          <div className="divide-y divide-[var(--color-border)]">
+            {Object.entries(request.data).map(([key, value]) => (
+              <div key={key} className="grid grid-cols-[0.9fr_1.1fr] gap-3 px-4 py-3 text-sm">
+                <p className="min-w-0 break-words text-[var(--color-muted)]">{key}</p>
+                <p className="min-w-0 break-words font-medium">{String(value || "—")}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </Card>

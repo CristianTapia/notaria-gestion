@@ -36,8 +36,9 @@ export default function DocumentActiveToggle({
     <Switch
       checked={active}
       disabled={saving}
+      loading={saving}
       onClick={toggle}
-      label={saving ? "Guardando..." : active ? "Visible" : "Oculto"}
+      label={active ? "Visible" : "Oculto"}
     />
   );
 }

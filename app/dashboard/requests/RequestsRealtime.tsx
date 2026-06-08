@@ -2,10 +2,19 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+
 import { supabase } from "@/lib/supabase";
 import { playNotificationSound } from "./notification-sound";
 
-export default function RequestsRealtime({ tenantId, soundEnabled }: { tenantId: string; soundEnabled: boolean }) {
+export default function RequestsRealtime({
+  tenantId,
+  soundEnabled,
+  onNewRequest,
+}: {
+  tenantId: string;
+  soundEnabled: boolean;
+  onNewRequest?: (requestId: string) => void;
+}) {
   const router = useRouter();
 
   useEffect(() => {
@@ -20,8 +29,16 @@ export default function RequestsRealtime({ tenantId, soundEnabled }: { tenantId:
           filter: `tenant_id=eq.${tenantId}`,
         },
         (payload) => {
-          if (payload.eventType === "INSERT" && soundEnabled) {
-            playNotificationSound();
+          if (payload.eventType === "INSERT") {
+            const requestId = typeof payload.new?.id === "string" ? payload.new.id : null;
+
+            if (requestId) {
+              onNewRequest?.(requestId);
+            }
+
+            if (soundEnabled) {
+              playNotificationSound(2);
+            }
           }
 
           router.refresh();
@@ -32,7 +49,7 @@ export default function RequestsRealtime({ tenantId, soundEnabled }: { tenantId:
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, router, soundEnabled]);
+  }, [tenantId, router, soundEnabled, onNewRequest]);
 
   return null;
 }
