@@ -109,19 +109,32 @@ export default function EditFieldForm({ field }: { field: Field }) {
   const remove = async () => {
     setSaving(true);
 
-    const { error } = await supabase.from("document_fields").delete().eq("id", field.id);
+    const { error: deleteError } = await supabase.from("document_fields").delete().eq("id", field.id);
+
+    if (!deleteError) {
+      setSaving(false);
+      router.refresh();
+      toast.success("Pregunta eliminada");
+      return;
+    }
+
+    const { error: archiveError } = await supabase
+      .from("document_fields")
+      .update({
+        archived_at: new Date().toISOString(),
+      })
+      .eq("id", field.id);
 
     setSaving(false);
 
-    if (error) {
-      toast.error(error.message);
+    if (archiveError) {
+      toast.error(archiveError.message);
       return;
     }
 
     router.refresh();
-    toast.success("Pregunta eliminada");
+    toast.success("Pregunta archivada");
   };
-
   return (
     <li className="min-w-0 rounded-xl border border-[var(--color-border)] bg-white p-3">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -255,9 +268,9 @@ export default function EditFieldForm({ field }: { field: Field }) {
 
       <ConfirmModal
         open={confirmDeleteOpen}
-        title="Eliminar pregunta"
-        description="¿Deseas eliminar esta pregunta del formulario?"
-        confirmLabel="Eliminar"
+        title="Quitar pregunta"
+        description="Si esta pregunta ya tiene historial, será archivada para conservar los datos antiguos."
+        confirmLabel="Quitar"
         danger
         loading={saving}
         onClose={() => {

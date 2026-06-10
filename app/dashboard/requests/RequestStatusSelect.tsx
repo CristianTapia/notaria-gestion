@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Select } from "@/components/ui";
 import { toast } from "sonner";
 
-const STATUS_OPTIONS = [
+import { Select } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
+
+type RequestStatus = "pending" | "in_progress" | "ready" | "delivered" | "cancelled";
+
+const STATUS_OPTIONS: { value: RequestStatus; label: string }[] = [
   { value: "pending", label: "Recibida" },
   { value: "in_progress", label: "En proceso" },
   { value: "ready", label: "Lista" },
@@ -18,22 +21,44 @@ export default function RequestStatusSelect({
   initialStatus,
 }: {
   requestId: string;
-  initialStatus: string;
+  initialStatus: RequestStatus;
 }) {
-  const [status, setStatus] = useState(initialStatus);
+  const [status, setStatus] = useState<RequestStatus>(initialStatus);
   const [saving, setSaving] = useState(false);
 
-  const updateStatus = async (nextStatus: string) => {
+  const isFinalStatus = status === "delivered" || status === "cancelled";
+
+  const updateStatus = async (nextStatus: RequestStatus) => {
+    if (isFinalStatus) {
+      toast.error("Esta solicitud ya fue finalizada y no puede modificarse.");
+      return;
+    }
+
     setStatus(nextStatus);
     setSaving(true);
 
-    const { error } = await supabase
-      .from("document_requests")
-      .update({
-        status: nextStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", requestId);
+    const now = new Date().toISOString();
+
+    const updatePayload: {
+      status: RequestStatus;
+      updated_at: string;
+      delivered_at?: string | null;
+      billing_status?: "pending" | "billable" | "non_billable" | "voided";
+    } = {
+      status: nextStatus,
+      updated_at: now,
+    };
+
+    if (nextStatus === "delivered") {
+      updatePayload.delivered_at = now;
+      updatePayload.billing_status = "billable";
+    }
+
+    if (nextStatus === "cancelled") {
+      updatePayload.billing_status = "non_billable";
+    }
+
+    const { error } = await supabase.from("document_requests").update(updatePayload).eq("id", requestId);
 
     setSaving(false);
 
@@ -48,14 +73,22 @@ export default function RequestStatusSelect({
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-      <Select value={status} onChange={(e) => updateStatus(e.target.value)} disabled={saving} className="sm:max-w-xs">
+      <Select
+        value={status}
+        onChange={(e) => updateStatus(e.target.value as RequestStatus)}
+        disabled={saving || isFinalStatus}
+        className="sm:max-w-xs"
+      >
         {STATUS_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
       </Select>
+
       {saving && <span className="text-xs text-[var(--color-muted)]">Guardando...</span>}
+
+      {isFinalStatus && <span className="text-xs text-[var(--color-muted)]">Estado finalizado</span>}
     </div>
   );
 }

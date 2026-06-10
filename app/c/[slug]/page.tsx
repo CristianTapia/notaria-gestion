@@ -45,6 +45,7 @@ export default async function ClientListPage({ params }: { params: Promise<{ slu
     .select("id,title,description")
     .eq("tenant_id", tenant.id)
     .eq("active", true)
+    .is("archived_at", null)
     .order("sort_order")
     .order("created_at");
 

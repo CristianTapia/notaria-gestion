@@ -23,18 +23,34 @@ export default function DeleteDocumentButton({
   const remove = async () => {
     setDeleting(true);
 
-    const { error } = await supabase.from("documents").delete().eq("id", documentId);
+    const { error: deleteError } = await supabase.from("documents").delete().eq("id", documentId);
 
-    setDeleting(false);
-
-    if (error) {
-      toast.error(error.message);
+    if (!deleteError) {
+      setDeleting(false);
+      setOpen(false);
+      router.refresh();
+      toast.success("Documento eliminado");
       return;
     }
 
-    toast.success("Documento eliminado");
+    const { error: archiveError } = await supabase
+      .from("documents")
+      .update({
+        active: false,
+        archived_at: new Date().toISOString(),
+      })
+      .eq("id", documentId);
+
+    setDeleting(false);
+
+    if (archiveError) {
+      toast.error(archiveError.message);
+      return;
+    }
+
     setOpen(false);
     router.refresh();
+    toast.success("Documento archivado");
   };
 
   return (
@@ -52,9 +68,9 @@ export default function DeleteDocumentButton({
 
       <ConfirmModal
         open={open}
-        title="Eliminar documento"
-        description={`¿Deseas eliminar "${documentTitle}" y todos sus campos asociados?`}
-        confirmLabel="Eliminar"
+        title="Quitar documento"
+        description={`Si "${documentTitle}" ya tiene solicitudes históricas, será archivado para conservar los datos antiguos.`}
+        confirmLabel="Quitar"
         danger
         loading={deleting}
         onClose={() => {

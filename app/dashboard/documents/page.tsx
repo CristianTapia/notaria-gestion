@@ -19,6 +19,7 @@ type DocumentFieldRow = {
   placeholder: string | null;
   options: string[] | null;
   sort_order: number | null;
+  archived_at: string | null;
 };
 
 type DocumentRow = {
@@ -65,16 +66,23 @@ export default async function DashboardDocumentsPage() {
         required,
         placeholder,
         options,
-        sort_order
+        sort_order,
+        archived_at
       )
     `,
     )
     .eq("tenant_id", tenantRole.tenant_id)
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
 
-  const typedDocuments = (documents ?? []) as DocumentRow[];
+  const typedDocuments = ((documents ?? []) as DocumentRow[]).map((doc) => ({
+    ...doc,
+    document_fields: doc.document_fields
+      .filter((field) => !field.archived_at)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+  }));
   const activeCount = typedDocuments.filter((doc) => doc.active).length;
 
   return (

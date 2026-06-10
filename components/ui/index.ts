@@ -11,3 +11,4 @@ export { CollapsibleCard } from "./CollapsibleCard";
 export { DataGrid } from "./DataGrid";
 export { FormField } from "./FormField";
 export { ConfirmModal } from "./ConfirmModal";
+export { CollapsibleSection } from "./CollapsibleSection";

@@ -1,6 +1,6 @@
-import { CalendarDays, Clock } from "lucide-react";
-
-import { Badge, Card, DataGrid } from "@/components/ui";
+import { CalendarDays, Clock, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Badge, Card, DataGrid, CollapsibleSection } from "@/components/ui";
 import RequestStatusSelect from "./RequestStatusSelect";
 
 type RequestStatus = "pending" | "in_progress" | "ready" | "delivered" | "cancelled";
@@ -66,6 +66,7 @@ export default function RequestCard({
   now: number;
 }) {
   const dateParts = formatRequestDateParts(request.created_at);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const needsAttention = request.status === "pending";
   const waitingMinutes = Math.max(0, Math.floor((now - new Date(request.created_at).getTime()) / (1000 * 60)));
   const isLongWaiting = needsAttention && waitingMinutes >= 15;
@@ -145,13 +146,18 @@ export default function RequestCard({
       </div>
 
       {request.data && (
-        <div className="mt-4">
-          <DataGrid
-            items={Object.entries(request.data).map(([key, value]) => ({
-              label: key,
-              value: String(value || "—"),
-            }))}
-          />
+        <div className="mt-4 pt-2">
+          <CollapsibleSection
+            title="Datos de la solicitud"
+            subtitle={`${Object.keys(request.data).length} campos completados`}
+          >
+            <DataGrid
+              items={Object.entries(request.data).map(([key, value]) => ({
+                label: key,
+                value: String(value || "—"),
+              }))}
+            />
+          </CollapsibleSection>
         </div>
       )}
     </Card>
