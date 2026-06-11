@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+// Navigation
 type NavItem = {
   href: string;
   label: string;
