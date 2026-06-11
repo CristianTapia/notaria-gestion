@@ -1,6 +1,5 @@
-import { CalendarDays, Clock, ChevronDown } from "lucide-react";
+import { DateTimeMeta, Badge, Card, DataGrid, CollapsibleSection } from "@/components/ui";
 import { useState } from "react";
-import { Badge, Card, DataGrid, CollapsibleSection } from "@/components/ui";
 import RequestStatusSelect from "./RequestStatusSelect";
 
 type RequestStatus = "pending" | "in_progress" | "ready" | "delivered" | "cancelled";
@@ -40,22 +39,6 @@ const STATUS_ACCENT: Record<RequestStatus, string> = {
   cancelled: "",
 };
 
-function formatRequestDateParts(date: string) {
-  const parsedDate = new Date(date);
-
-  const day = String(parsedDate.getDate()).padStart(2, "0");
-  const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
-  const year = parsedDate.getFullYear();
-
-  const hours = String(parsedDate.getHours()).padStart(2, "0");
-  const minutes = String(parsedDate.getMinutes()).padStart(2, "0");
-
-  return {
-    date: `${day}-${month}-${year}`,
-    time: `${hours}:${minutes}`,
-  };
-}
-
 export default function RequestCard({
   request,
   isNew = false,
@@ -65,7 +48,6 @@ export default function RequestCard({
   isNew?: boolean;
   now: number;
 }) {
-  const dateParts = formatRequestDateParts(request.created_at);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const needsAttention = request.status === "pending";
   const waitingMinutes = Math.max(0, Math.floor((now - new Date(request.created_at).getTime()) / (1000 * 60)));
@@ -119,17 +101,7 @@ export default function RequestCard({
             )}
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--color-muted)]">
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5" />
-              {dateParts.date}
-            </span>
-
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
-              {dateParts.time}
-            </span>
-          </div>
+          <DateTimeMeta value={request.created_at} className="mt-2" />
         </div>
 
         <Badge variant={STATUS_BADGE_VARIANT[request.status] ?? "neutral"} className="w-fit">

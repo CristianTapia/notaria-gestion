@@ -1,9 +1,9 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, ClipboardList } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { Button, PageHeader } from "@/components/ui";
+import { Button, Card, PageHeader } from "@/components/ui";
 import RequestCard from "./RequestCard";
 import RequestsRealtime from "./RequestsRealtime";
 import { playNotificationSound } from "./notification-sound";
@@ -184,7 +184,17 @@ export default function RequestsClient({ tenantId, requests }: { tenantId: strin
 
       <div className="min-w-0 space-y-3">
         {filteredRequests.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted)]">No hay solicitudes para este filtro.</p>
+          <Card className="flex min-h-48 flex-col items-center justify-center text-center">
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-[var(--color-gold)]/10 text-[var(--color-gold)]">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+
+            <p className="mt-4 break-words font-medium">No hay solicitudes por ahora</p>
+
+            <p className="mt-1 max-w-sm break-words text-sm text-[var(--color-muted)]">
+              Cuando un cliente complete un formulario desde el QR, aparecerá automáticamente en este panel.
+            </p>
+          </Card>
         ) : (
           filteredRequests.map((request) => (
             <RequestCard

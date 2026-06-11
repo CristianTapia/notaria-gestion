@@ -70,29 +70,35 @@ export default function DocumentCard({ doc }: { doc: DocumentRow }) {
         </div>
       </div>
 
-      {open && (
-        <div className="mt-5 space-y-4 border-t border-[var(--color-border)] pt-5">
-          <div className="min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-cream-input)] p-3 sm:p-4">
-            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-              <h3 className="text-sm font-medium">Campos del formulario</h3>
+      <div
+        className={`grid transition-all duration-300 ease-out ${
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="mt-5 space-y-4 border-t border-[var(--color-border)] pt-5">
+            <div className="min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-cream-input)] p-3 sm:p-4">
+              <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <h3 className="text-sm font-medium">Campos del formulario</h3>
 
-              <span className="text-xs text-[var(--color-muted)]">{doc.document_fields.length} campos</span>
+                <span className="text-xs text-[var(--color-muted)]">{doc.document_fields.length} campos</span>
+              </div>
+
+              {doc.document_fields.length === 0 ? (
+                <p className="mt-3 text-sm text-[var(--color-muted)]">Este documento aún no tiene campos.</p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {doc.document_fields.map((field) => (
+                    <EditFieldForm key={field.id} field={field} />
+                  ))}
+                </ul>
+              )}
             </div>
 
-            {doc.document_fields.length === 0 ? (
-              <p className="mt-3 text-sm text-[var(--color-muted)]">Este documento aún no tiene campos.</p>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {doc.document_fields.map((field) => (
-                  <EditFieldForm key={field.id} field={field} />
-                ))}
-              </ul>
-            )}
+            <CreateFieldForm documentId={doc.id} nextSortOrder={(doc.document_fields?.length ?? 0) + 1} />
           </div>
-
-          <CreateFieldForm documentId={doc.id} nextSortOrder={(doc.document_fields?.length ?? 0) + 1} />
         </div>
-      )}
+      </div>
     </Card>
   );
 }

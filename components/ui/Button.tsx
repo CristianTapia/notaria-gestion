@@ -17,13 +17,14 @@ export function Button({
   variant?: ButtonVariant;
 }) {
   const isIcon = variant === "icon";
+  const animated = variant === "primary" || variant === "secondary";
 
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
         isIcon ? "" : "h-10 px-4"
-      } max-w-full text-center ${variants[variant]} ${className}`}
+      } ${animated ? "hover:-translate-y-0.5 hover:shadow-sm" : ""} max-w-full text-center ${variants[variant]} ${className}`}
     >
       {children}
     </button>
